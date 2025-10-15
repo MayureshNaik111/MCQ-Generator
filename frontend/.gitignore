@@ -31,7 +31,10 @@ yarn-error.log*
 .pnpm-debug.log*
 
 # env files (can opt-in for committing if needed)
-.env*
+#.env*
+
+# SPECIFICALLY IGNORE SENSITIVE FILES THAT WERE COMMITTED BY ACCIDENT:
+../backend/.env
 
 # vercel
 .vercel
