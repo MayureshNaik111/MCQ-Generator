@@ -20,5 +20,9 @@ RUN npm rebuild lightningcss || true
 # build app
 RUN npm run build
 
-EXPOSE 3000
-CMD ["npm", "start"]
+# build app already runs npm run build
+# Ensure PORT default and use it at runtime
+ENV PORT=3000
+EXPOSE ${PORT}
+# start Next.js on the provided port
+CMD ["sh","-c","npm run start -- -p ${PORT}"]

@@ -1,0 +1,28 @@
+services:
+  - name: mcq-backend
+    type: web
+    plan: starter
+    region: oregon
+    runtime: docker
+    dockerfilePath: ./backend/Dockerfile
+    rootDir: backend
+    envVars:
+      - key: PORT
+        value: "8000"
+    healthCheckPath: /health || / (adjust to your endpoint)
+    buildCommand: ""   # leave empty; Render builds the Dockerfile
+
+  - name: mcq-frontend
+    type: web
+    plan: starter
+    region: oregon
+    runtime: docker
+    dockerfilePath: ./frontend/Dockerfile
+    rootDir: frontend
+    envVars:
+      # When frontend and backend run on Render in same Blueprint,
+      # frontend can call backend via its service name and port.
+      - key: NEXT_PUBLIC_API_URL
+        value: "http://mcq-backend:8000"
+    healthCheckPath: /
+    buildCommand: ""
