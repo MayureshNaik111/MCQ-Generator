@@ -9,7 +9,7 @@ RUN apt-get update && \
 
 # copy package files and install
 COPY package*.json ./
-RUN npm install
+RUN npm install 
 
 # copy source
 COPY . .
