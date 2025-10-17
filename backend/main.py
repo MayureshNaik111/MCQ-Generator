@@ -17,7 +17,7 @@ app.add_middleware(
     CORSMiddleware,
     allow_origins=[
         "https://mcq-generator-chi.vercel.app",  # Vercel frontend URL
-        "http://localhost:3000",                  # Local frontend
+        "http://localhost:3000",                 # Local frontend
     ],
     allow_credentials=True,
     allow_methods=["*"],
