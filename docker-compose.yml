@@ -1,0 +1,21 @@
+version: "3.8"
+services:
+  backend:
+    build: ./backend
+    container_name: mcq-backend
+    ports:
+      - "8000:8000"        # Optional for debugging; can remove in production
+    env_file:
+      - ./backend/.env
+    restart: unless-stopped
+
+  frontend:
+    build: ./frontend
+    container_name: mcq-frontend
+    ports:
+      - "80:3000"          # Expose frontend on port 80 for public access
+    depends_on:
+      - backend
+    environment:
+      - NEXT_PUBLIC_API_URL=http://backend:8000
+    restart: unless-stopped

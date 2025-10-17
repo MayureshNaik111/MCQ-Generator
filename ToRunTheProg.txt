@@ -1,3 +1,9 @@
+For BOTH (frontend and backend)
+docker-compose build   // For build after change are made
+docker-compose up      // To run both frontend and backend together
+
+docker-compose down    // ctrl+c also works to terminate
+
 For frontend:
 cd frontend
 npm run dev
@@ -5,3 +11,5 @@ npm run dev
 For backend:
 cd backend
 python -m uvicorn main:app --reload
+
+
