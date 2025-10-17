@@ -36,18 +36,24 @@ export default function Home() {
       let res;
       let data;
 
+      const backendUrl = process.env.NEXT_PUBLIC_API_URL;
+
+      if (!backendUrl) throw new Error("Backend URL not set in environment variables");
+
       for (let attempt = 0; attempt < maxRetries; attempt++) {
         try {
-          res = await fetch("http://127.0.0.1:8000/generate_mcqs", {
+          res = await fetch(`${backendUrl}/generate_mcqs`, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ topic }),
           });
           data = await res.json();
           if (res.ok) break;
-          else if (attempt === maxRetries - 1) throw new Error(data?.detail || "Error generating MCQs");
+          else if (attempt === maxRetries - 1)
+            throw new Error(data?.detail || "Error generating MCQs");
         } catch (err) {
-          if (attempt < maxRetries - 1) await new Promise((r) => setTimeout(r, 1000 * Math.pow(2, attempt)));
+          if (attempt < maxRetries - 1)
+            await new Promise((r) => setTimeout(r, 1000 * Math.pow(2, attempt)));
           else throw err;
         }
       }
@@ -59,27 +65,23 @@ export default function Home() {
           correct_answer: String(mcq.correct_answer || "").trim(),
         };
 
-        // === Improved option extraction ===
+        // Option extraction logic (same as before)
         let questionText = processedMcq.question;
         let extractedOptions: string[] = [];
 
-        // 1) Try multiline labeled options like:
-        //    "What is X?\na) Opt1\nb) Opt2\nc) Opt3\n"
         const labelLineRegex = /^\s*([A-Za-z0-9])[\)\.\-]\s*(.+)$/gm;
         const lineMatches = [...questionText.matchAll(labelLineRegex)];
         if (lineMatches.length >= 2) {
-          // options are captured in group 2 of each match
           extractedOptions = lineMatches.map((m) => (m[2] || "").trim()).filter(Boolean);
-          // question is everything before the first match
           const firstIndex = lineMatches[0].index ?? 0;
           questionText = (questionText.slice(0, firstIndex) || "").trim();
         } else {
-          // 2) Try inline labels using a lookahead split, e.g.
-          //    "Q? a) Opt1 b) Opt2 c) Opt3"
           const parts = questionText.split(/(?=\s*[A-Za-z0-9][\)\.\-]\s*)/);
           if (parts.length > 1) {
-            // first part is question (maybe empty), remaining parts start with labels
-            const potentialOptions = parts.slice(1).map((p) => p.replace(/^[\s]*[A-Za-z0-9][\)\.\-]\s*/, "").trim()).filter(Boolean);
+            const potentialOptions = parts
+              .slice(1)
+              .map((p) => p.replace(/^[\s]*[A-Za-z0-9][\)\.\-]\s*/, "").trim())
+              .filter(Boolean);
             if (potentialOptions.length >= 2) {
               extractedOptions = potentialOptions;
               questionText = parts[0].trim();
@@ -87,42 +89,33 @@ export default function Home() {
           }
         }
 
-        // 3) If still no options, try splitting by newlines and picking lines that look short (fallback)
         if (extractedOptions.length < 2) {
-          const lines = processedMcq.question.split(/\r?\n/).map((l) => l.trim()).filter(Boolean);
+          const lines = processedMcq.question
+            .split(/\r?\n/)
+            .map((l) => l.trim())
+            .filter(Boolean);
           const shortLines = lines.filter((l) => l.length > 0 && l.length < 120);
-          // heuristics: last 4 short lines may be options if there are at least 2
           if (shortLines.length >= 2) {
-            // take the last up to 4 short lines as options if they don't look like the whole paragraph
             const take = shortLines.slice(-4);
-            // ensure they are not the full question repeated
             if (take.some((t) => processedMcq.question.indexOf(t) >= 0 && t.length < processedMcq.question.length)) {
               extractedOptions = take;
-              // questionText becomes everything excluding those last lines
               const remainder = lines.slice(0, lines.length - take.length).join(" ").trim();
               if (remainder) questionText = remainder;
             }
           }
         }
 
-        // 4) Final fallback: if no extraction succeeded, keep existing options if provided,
-        //    otherwise set neutral placeholder options (so UI doesn't display question as an option)
         if ((!processedMcq.options || processedMcq.options.length === 0) && extractedOptions.length >= 2) {
           processedMcq.options = extractedOptions;
         } else if (!processedMcq.options || processedMcq.options.length === 0) {
-          // avoid using the entire question as an option
           processedMcq.options = ["Option 1", "Option 2", "Option 3", "Option 4"];
         }
 
-        // If questionText is empty after extraction, prefer the original trimmed question.
         processedMcq.question = questionText.length > 3 ? questionText : processedMcq.question;
-
-        // Trim every option
         processedMcq.options = (processedMcq.options || []).map((opt: string) => (opt || "").trim());
 
         return processedMcq;
-      })
-        .filter((mcq: MCQ) => mcq.options && mcq.options.length > 0 && mcq.correct_answer);
+      }).filter((mcq: MCQ) => mcq.options && mcq.options.length > 0 && mcq.correct_answer);
 
       setMcqs(processedMCQs);
     } catch (err: any) {
@@ -133,7 +126,6 @@ export default function Home() {
     }
   };
 
-  // Helpers for matching/normalizing answers
   const stripLeadingLabel = (text: string) =>
     String(text || "").trim().replace(/^[\s]*[A-Za-z0-9]+[\)\.\-:\s]+/, "").trim();
 
@@ -141,10 +133,8 @@ export default function Home() {
 
   const getCorrectIndex = (mcq: MCQ): number => {
     const ans = (mcq.correct_answer || "").trim();
-
     if (/^[a-dA-D]$/.test(ans)) return ans.toLowerCase().charCodeAt(0) - 97;
     if (/^[1-4]$/.test(ans)) return parseInt(ans, 10) - 1;
-
     const normalizedAns = normalize(ans);
     for (let i = 0; i < (mcq.options || []).length; i++) {
       if (normalize(mcq.options![i]) === normalizedAns) return i;
@@ -152,7 +142,6 @@ export default function Home() {
     for (let i = 0; i < (mcq.options || []).length; i++) {
       if (stripLeadingLabel(mcq.options![i]).toLowerCase() === stripLeadingLabel(ans).toLowerCase()) return i;
     }
-
     return -1;
   };
 
@@ -160,16 +149,12 @@ export default function Home() {
     if (!mcqs.length) return;
     const currentMCQ = mcqs[currentIndex];
     if (!currentMCQ || !currentMCQ.correct_answer) return;
-
     const correctIdx = getCorrectIndex(currentMCQ);
-
     const isCorrect =
       correctIdx >= 0
         ? choiceIdx === correctIdx
         : normalize(currentMCQ.options![choiceIdx]) === normalize(currentMCQ.correct_answer);
-
     if (isCorrect) setUserScore((p) => p + 1);
-
     setShowAnswer(true);
   };
 
@@ -187,10 +172,8 @@ export default function Home() {
 
   return (
     <main className="font-sans min-h-screen flex flex-col items-center justify-center bg-gradient-to-r from-blue-400 via-purple-400 to-pink-400 p-6">
-      <h1
-        className="text-4xl font-bold mb-4 text-white text-center sm:text-4xl md:text-4xl lg:text-[3rem]"
-        style={{ textShadow: "0 2px 6px rgba(0,0,0,0.3)" }}
-      >
+      <h1 className="text-4xl font-bold mb-4 text-white text-center sm:text-4xl md:text-4xl lg:text-[3rem]"
+          style={{ textShadow: "0 2px 6px rgba(0,0,0,0.3)" }}>
         MCQ Generator
       </h1>
 
@@ -203,9 +186,7 @@ export default function Home() {
             value={topic}
             onChange={(e) => setTopic(e.target.value)}
             onKeyDown={(e) => {
-              if (e.key === "Enter" && topic.trim() && !loading) {
-                fetchMCQs();
-              }
+              if (e.key === "Enter" && topic.trim() && !loading) fetchMCQs();
             }}
             className="w-full px-4 py-3 border border-blue-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-400 bg-gray-50 placeholder-gray-500 transition duration-150"
           />
@@ -233,22 +214,20 @@ export default function Home() {
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             {(current.options ?? []).map((opt, idx) => {
               const correctIdx = getCorrectIndex(current);
-              const isCorrect = correctIdx >= 0 ? idx === correctIdx : normalize(opt) === normalize(current.correct_answer);
-
+              const isCorrect =
+                correctIdx >= 0 ? idx === correctIdx : normalize(opt) === normalize(current.correct_answer);
               return (
                 <button
                   key={idx}
                   onClick={() => handleAnswer(idx)}
                   disabled={showAnswer}
-                  className={`
-                    px-4 py-3 rounded-lg text-left transition shadow-md font-medium text-base
+                  className={`px-4 py-3 rounded-lg text-left transition shadow-md font-medium text-base
                     ${showAnswer
                       ? isCorrect
                         ? "bg-green-100 text-green-700 border-2 border-green-500"
                         : "bg-red-100 text-red-700 line-through opacity-80"
                       : "bg-gray-50 text-blue-800 hover:bg-blue-100 hover:shadow-lg disabled:cursor-not-allowed"
-                    }
-                  `}
+                    }`}
                 >
                   {opt}
                 </button>
