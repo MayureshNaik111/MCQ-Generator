@@ -6,22 +6,25 @@ from google import genai
 from google.genai import types
 import os, re, asyncio
 
-# Load environment variables only once
+# Load environment variables
 load_dotenv()
 
 # Initialize FastAPI app
 app = FastAPI()
 
-# Configure CORS (restrict in production)
+# Configure CORS (allow only your Vercel frontend and local dev)
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=[
+        "https://mcq-generator-chi.vercel.app",  # Vercel frontend URL
+        "http://localhost:3000",                  # Local frontend
+    ],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
-# Initialize Gemini client once (avoid re-initialization per request)
+# Initialize Gemini client once
 client = genai.Client(api_key=os.getenv("GEMINI_API_KEY"))
 
 class TopicRequest(BaseModel):
@@ -44,7 +47,6 @@ async def generate_mcqs(request: TopicRequest):
     )
 
     try:
-        # Run Gemini call in thread to avoid blocking event loop
         loop = asyncio.get_running_loop()
         response = await loop.run_in_executor(
             None,
@@ -71,7 +73,6 @@ async def generate_mcqs(request: TopicRequest):
         if not text:
             raise HTTPException(status_code=500, detail="No MCQs generated")
 
-        # Split and parse MCQs efficiently
         mcq_blocks = re.split(r"-{3,}", text)
         mcqs = []
         for block in filter(None, map(str.strip, mcq_blocks)):
