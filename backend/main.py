@@ -12,7 +12,7 @@ load_dotenv()
 # Initialize FastAPI app
 app = FastAPI()
 
-# Configure CORS
+# Configure CORS 
 app.add_middleware(
     CORSMiddleware,
     allow_origins=[
@@ -51,7 +51,7 @@ async def generate_mcqs(request: TopicRequest):
         response = await loop.run_in_executor(
             None,
             lambda: client.models.generate_content(
-                model="gemini-2.5-flash",
+                model="gemini-2.0-flash",
                 contents=prompt,
                 config=types.GenerateContentConfig(
                     temperature=0.3,
@@ -61,13 +61,13 @@ async def generate_mcqs(request: TopicRequest):
             ),
         )
 
-        text = getattr(response, "output_text", None)
+        text = getattr(response, "text", None)
         if not text and hasattr(response, "candidates"):
-            candidates = getattr(response, "candidates", [])
+            candidates = response.candidates
             if candidates and hasattr(candidates[0].content, "parts"):
-                parts = getattr(candidates[0].content, "parts", [])
+                parts = candidates[0].content.parts
                 text = " ".join(
-                    getattr(p, "text", "") for p in parts if getattr(p, "text", None)
+                    p.text for p in parts if hasattr(p, "text")
                 ).strip()
 
         if not text:
