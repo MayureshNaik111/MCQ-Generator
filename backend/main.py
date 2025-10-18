@@ -12,7 +12,7 @@ load_dotenv()
 # Initialize FastAPI app
 app = FastAPI()
 
-# Configure CORS (allow only your Vercel frontend and local dev)
+# Configure CORS
 app.add_middleware(
     CORSMiddleware,
     allow_origins=[
