@@ -28,7 +28,7 @@ Frontend built with **Next.js 15**, backend with **FastAPI**.
 
 1. Clone the repo:
     ```bash
-    git clone [https://github.com/MayureshNaik111/MCQ-Generator.git](https://github.com/MayureshNaik111/MCQ-Generator.git)
+    git clone https://github.com/MayureshNaik111/MCQ-Generator.git
     cd frontend
     ```
 2. Install dependencies:
