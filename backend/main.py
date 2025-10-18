@@ -61,13 +61,13 @@ async def generate_mcqs(request: TopicRequest):
             ),
         )
 
-        text = getattr(response, "text", None)
+        text = getattr(response, "output_text", None)
         if not text and hasattr(response, "candidates"):
-            candidates = response.candidates
+            candidates = getattr(response, "candidates", [])
             if candidates and hasattr(candidates[0].content, "parts"):
-                parts = candidates[0].content.parts
+                parts = getattr(candidates[0].content, "parts", [])
                 text = " ".join(
-                    p.text for p in parts if hasattr(p, "text")
+                    getattr(p, "text", "") for p in parts if getattr(p, "text", None)
                 ).strip()
 
         if not text:
