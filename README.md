@@ -28,7 +28,7 @@ Frontend built with **Next.js 15**, backend with **FastAPI**.
 
 1. Clone the repo:
     ```bash
-    git clone [https://github.com/MayureshNaik111/MCQ-Generator.git](https://github.com/MayureshNaik111/MCQ-Generator.git)
+    git clone https://github.com/MayureshNaik111/MCQ-Generator.git
     cd frontend
     ```
 2. Install dependencies:
@@ -64,7 +64,7 @@ Frontend built with **Next.js 15**, backend with **FastAPI**.
 
 * **Frontend:** Create a `.env.local` file with:
     ```env
-    NEXT_PUBLIC_API_URL=[https://your-backend.onrender.com](https://your-backend.onrender.com)
+    NEXT_PUBLIC_API_URL=https://mcq-generator-wckk.onrender.com
     ```
 * **Backend:** Use a `.env` file for API keys or DB connections (if any).
 
