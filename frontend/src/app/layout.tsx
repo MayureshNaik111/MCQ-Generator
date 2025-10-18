@@ -5,7 +5,7 @@ import "./globals.css";
 export const metadata: Metadata = {
   title: "MCQ Generator",
   icons: {
-    icon: "/favicon.ico",
+    icon: "/favicon1.ico",
   },
 };
 
